@@ -1,0 +1,31 @@
+# Environnement virtuel
+.venv/
+venv/
+ENV/
+env/
+
+# Fichiers de configuration et variables d'environnement
+.env
+
+# Base de données locale
+db.sqlite3
+db.sqlite3-journal
+
+# Fichiers statiques collectés
+staticfiles/
+
+# Byte-compiled / cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+
+# IDEs et éditeurs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
