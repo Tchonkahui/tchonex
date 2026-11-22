@@ -1,0 +1,15 @@
+{% extends 'app_base.html' %}
+{% block title %}{{ titre }}{% endblock %}
+{% block titre %}{{ titre }}{% endblock %}
+{% block content %}
+<section class="panneau panneau-formulaire">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'core/_champs.html' %}
+    <div class="formulaire-actions">
+      <button class="bouton bouton-orange" type="submit">{{ bouton }}</button>
+      <a class="bouton bouton-contour" href="{% url retour %}">Annuler</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

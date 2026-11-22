@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Créer votre entreprise{% endblock %}
+{% block content %}
+<section class="carte-formulaire carte-large">
+  <h1>Créer votre entreprise</h1>
+  <p class="aide">Étape 2 sur 3. Ces informations apparaissent dans votre espace de travail.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'core/_champs.html' %}
+    <button class="bouton bouton-orange bouton-plein" type="submit">Continuer vers les modules</button>
+  </form>
+</section>
+{% endblock %}

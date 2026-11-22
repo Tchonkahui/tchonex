@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Créer un compte{% endblock %}
+{% block content %}
+<section class="carte-formulaire">
+  <h1>Créer votre compte</h1>
+  <p class="aide">Étape 1 sur 3. Ensuite, vous créerez votre entreprise.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include 'core/_champs.html' %}
+    <button class="bouton bouton-orange bouton-plein" type="submit">Créer mon compte</button>
+  </form>
+  <p class="aide centre">Vous avez déjà un compte ? <a href="{% url 'connexion' %}">Se connecter</a></p>
+</section>
+{% endblock %}

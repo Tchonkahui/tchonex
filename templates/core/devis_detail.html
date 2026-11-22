@@ -1,0 +1,40 @@
+{% extends 'app_base.html' %}
+{% load tchonex %}
+{% block title %}Devis {{ devis.numero }}{% endblock %}
+{% block titre %}Devis {{ devis.numero }}{% endblock %}
+{% block actions %}
+  <a class="bouton bouton-contour" href="{% url 'ventes' %}">Retour aux devis</a>
+  {% if devis.statut == 'brouillon' %}
+    <a class="bouton bouton-contour" href="{% url 'devis_modifier' devis.pk %}">Modifier</a>
+    <form method="post" action="{% url 'devis_confirmer' devis.pk %}" data-confirmer="Confirmer ce devis ? Le stock des produits sera diminué.">{% csrf_token %}
+      <button class="bouton bouton-orange" type="submit">Confirmer le devis</button>
+    </form>
+  {% endif %}
+{% endblock %}
+{% block content %}
+<ol class="parcours-statut" aria-label="Statut du devis">
+  <li class="{% if devis.statut == 'brouillon' %}en-cours{% else %}fait{% endif %}">Brouillon</li>
+  <li class="{% if devis.statut == 'confirme' %}en-cours{% endif %}">Confirmé</li>
+</ol>
+<section class="panneau">
+  <dl class="fiche">
+    <div><dt>Client</dt><dd>{{ devis.client.nom }}</dd></div>
+    <div><dt>Date</dt><dd>{{ devis.date_creation|date:'d/m/Y H:i' }}</dd></div>
+    <div><dt>Statut</dt><dd><span class="badge badge-{{ devis.statut }}">{{ devis.get_statut_display }}</span></dd></div>
+  </dl>
+  <div class="tableau-defile"><table class="tableau">
+    <thead><tr><th>Produit</th><th class="droite">Quantité</th><th class="droite">Prix unitaire</th><th class="droite">Montant</th></tr></thead>
+    <tbody>
+    {% for l in lignes %}
+      <tr><td>{{ l.produit.nom }}</td><td class="droite">{{ l.quantite }}</td><td class="droite">{{ l.prix_unitaire|fcfa }}</td><td class="droite">{{ l.montant|fcfa }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="total-devis">Total <strong>{{ devis.total|fcfa }}</strong></p>
+</section>
+{% if devis.statut == 'brouillon' %}
+<form method="post" action="{% url 'devis_supprimer' devis.pk %}" data-confirmer="Supprimer ce devis brouillon ?">{% csrf_token %}
+  <button class="lien-danger" type="submit">Supprimer ce brouillon</button>
+</form>
+{% endif %}
+{% endblock %}

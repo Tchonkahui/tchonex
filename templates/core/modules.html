@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Choisir les modules{% endblock %}
+{% block content %}
+<form method="post" class="selection" id="selection-modules">
+  {% csrf_token %}
+  <div class="selection-liste">
+    <h1>{% if premiere_fois %}Choisissez vos modules{% else %}Modules de {{ entreprise.nom }}{% endif %}</h1>
+    <p class="aide">{% if premiere_fois %}Étape 3 sur 3. {% endif %}Activez seulement ce dont {{ entreprise.nom }} a besoin. Vous pourrez modifier ce choix à tout moment.</p>
+
+    <div class="grille-modules">
+      {% for m in catalogue %}
+        {% if m.disponible %}
+          <label class="module" data-code="{{ m.code }}" data-nom="{{ m.nom }}" data-depend="{{ m.depend_de|join:',' }}">
+            <input type="checkbox" name="modules" value="{{ m.code }}" {% if m.code in actifs %}checked{% endif %}>
+            <span class="module-corps">
+              <span class="module-icone">{{ m.icone }}</span>
+              <strong>{{ m.nom }}</strong>
+              <span class="module-texte">{{ m.description }}</span>
+              {% if m.depend_de %}<span class="module-note">Active aussi Clients et Produits & Stock.</span>{% endif %}
+            </span>
+            <span class="module-coche" aria-hidden="true">✓</span>
+          </label>
+        {% else %}
+          <div class="module module-bientot" aria-disabled="true">
+            <span class="module-corps">
+              <span class="module-icone">{{ m.icone }}</span>
+              <strong>{{ m.nom }}</strong>
+              <span class="module-texte">{{ m.description }}</span>
+              <span class="module-note">Bientôt disponible</span>
+            </span>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="recapitulatif">
+    <h2><span id="compteur">0</span> module(s) sélectionné(s)</h2>
+    <ul id="liste-choix"></ul>
+    <p class="aide" id="vide-choix">Aucun module pour l’instant. Cochez au moins un module.</p>
+    <button class="bouton bouton-orange bouton-plein" type="submit" id="valider-modules">Valider mon choix</button>
+    {% if not premiere_fois %}<a class="bouton bouton-contour bouton-plein" href="{% url 'tableau_de_bord' %}">Annuler</a>{% endif %}
+  </aside>
+</form>
+{% endblock %}

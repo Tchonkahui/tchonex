@@ -1,0 +1,44 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Tableau de bord{% endblock %} · {{ entreprise.nom }} · TCHONEX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="appli">
+  <div class="app">
+    <aside class="menu">
+      <a class="logo logo-clair" href="{% url 'tableau_de_bord' %}">{% include 'core/_logo.html' %}<span>TCHONEX</span></a>
+      <div class="societe">
+        <strong>{{ entreprise.nom }}</strong>
+        <span>{{ entreprise.secteur }}</span>
+      </div>
+      <nav class="menu-liens" aria-label="Navigation principale">
+        <a href="{% url 'tableau_de_bord' %}" {% if actif == 'tableau' %}aria-current="page"{% endif %}><span class="ico">🏠</span>Tableau de bord</a>
+        {% for m in menu_modules %}
+          <a href="{% url m.code %}" {% if actif == m.code %}aria-current="page"{% endif %}><span class="ico">{{ m.icone }}</span>{{ m.nom }}</a>
+        {% endfor %}
+      </nav>
+      <div class="menu-bas">
+        <a href="{% url 'parametres' %}" {% if actif == 'parametres' %}aria-current="page"{% endif %}><span class="ico">⚙️</span>Paramètres</a>
+        <form method="post" action="{% url 'deconnexion' %}">{% csrf_token %}
+          <button type="submit"><span class="ico">🚪</span>Se déconnecter</button>
+        </form>
+      </div>
+    </aside>
+    <main class="espace">
+      <header class="barre">
+        <h1>{% block titre %}{% endblock %}</h1>
+        <div class="barre-actions">{% block actions %}{% endblock %}</div>
+      </header>
+      {% include 'core/_messages.html' %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

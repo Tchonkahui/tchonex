@@ -1,0 +1,31 @@
+{% extends 'app_base.html' %}
+{% block title %}Clients{% endblock %}
+{% block titre %}Clients{% endblock %}
+{% block actions %}<a class="bouton bouton-orange" href="{% url 'client_nouveau' %}">Nouveau client</a>{% endblock %}
+{% block content %}
+<form class="recherche" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Rechercher un nom, un téléphone, un e-mail" aria-label="Rechercher un client">
+  <button class="bouton bouton-contour" type="submit">Rechercher</button>
+</form>
+<section class="panneau">
+  {% if clients %}
+  <div class="tableau-defile"><table class="tableau">
+    <thead><tr><th>Nom</th><th>Téléphone</th><th>E-mail</th><th>Adresse</th><th class="droite">Actions</th></tr></thead>
+    <tbody>
+    {% for c in clients %}
+      <tr>
+        <td><strong>{{ c.nom }}</strong></td><td>{{ c.telephone|default:'—' }}</td>
+        <td>{{ c.email|default:'—' }}</td><td>{{ c.adresse|default:'—' }}</td>
+        <td class="droite actions">
+          <a href="{% url 'client_modifier' c.pk %}">Modifier</a>
+          <form method="post" action="{% url 'client_supprimer' c.pk %}" data-confirmer="Supprimer le client {{ c.nom }} ?">{% csrf_token %}<button class="lien-danger" type="submit">Supprimer</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+    <p class="vide">{% if q %}Aucun client ne correspond à « {{ q }} ».{% else %}Aucun client pour le moment. <a href="{% url 'client_nouveau' %}">Ajouter votre premier client</a>{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'app_base.html' %}
+{% load tchonex %}
+{% block title %}{{ titre }}{% endblock %}
+{% block titre %}{{ titre }}{% endblock %}
+{% block content %}
+<form method="post" novalidate id="devis-form">
+  {% csrf_token %}
+  <section class="panneau">
+    {% if form.non_field_errors %}<div class="erreurs">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
+    <div class="champ {% if form.client.errors %}champ-erreur{% endif %}">
+      <label for="{{ form.client.id_for_label }}">Client</label>
+      {{ form.client }}
+      {% for e in form.client.errors %}<p class="erreur">{{ e }}</p>{% endfor %}
+      {% if not form.client.field.queryset.exists %}<p class="aide">Aucun client pour l’instant. <a href="{% url 'client_nouveau' %}">Ajoutez-en un d’abord.</a></p>{% endif %}
+    </div>
+  </section>
+
+  <section class="panneau">
+    <div class="panneau-tete"><h2>Lignes du devis</h2></div>
+    {{ lignes.management_form }}
+    {% if lignes.non_form_errors %}<div class="erreurs">{% for e in lignes.non_form_errors %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
+    <div class="tableau-defile">
+    <table class="tableau tableau-lignes" id="table-lignes">
+      <thead><tr><th>Produit</th><th class="droite">Quantité</th><th class="droite">Prix unitaire</th><th class="droite">Montant</th><th></th></tr></thead>
+      <tbody id="lignes-corps">
+      {% for f in lignes.forms %}
+        <tr class="ligne">
+          <td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.produit }}{% for e in f.produit.errors %}<p class="erreur">{{ e }}</p>{% endfor %}</td>
+          <td class="droite">{{ f.quantite }}{% for e in f.quantite.errors %}<p class="erreur">{{ e }}</p>{% endfor %}</td>
+          <td class="droite prix-unitaire">—</td>
+          <td class="droite montant-ligne">—</td>
+          <td class="droite"><span class="cache">{{ f.DELETE }}</span><button type="button" class="lien-danger retirer-ligne">Retirer</button></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <button type="button" class="bouton bouton-contour" id="ajouter-ligne">Ajouter une ligne</button>
+    <p class="total-devis">Total <strong id="total-devis">0 FCFA</strong></p>
+  </section>
+
+  <div class="formulaire-actions">
+    <button class="bouton bouton-orange" type="submit">Enregistrer le devis</button>
+    <a class="bouton bouton-contour" href="{% if devis %}{% url 'devis_detail' devis.pk %}{% else %}{% url 'ventes' %}{% endif %}">Annuler</a>
+  </div>
+</form>
+
+<template id="modele-ligne">
+  <tr class="ligne">
+    <td>{% for h in lignes.empty_form.hidden_fields %}{{ h }}{% endfor %}{{ lignes.empty_form.produit }}</td>
+    <td class="droite">{{ lignes.empty_form.quantite }}</td>
+    <td class="droite prix-unitaire">—</td>
+    <td class="droite montant-ligne">—</td>
+    <td class="droite"><span class="cache">{{ lignes.empty_form.DELETE }}</span><button type="button" class="lien-danger retirer-ligne">Retirer</button></td>
+  </tr>
+</template>
+{{ produits_prix|json_script:'prix-produits' }}
+{% endblock %}

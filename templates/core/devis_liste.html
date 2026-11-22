@@ -1,0 +1,28 @@
+{% extends 'app_base.html' %}
+{% load tchonex %}
+{% block title %}Ventes{% endblock %}
+{% block titre %}Ventes{% endblock %}
+{% block actions %}<a class="bouton bouton-orange" href="{% url 'devis_nouveau' %}">Nouveau devis</a>{% endblock %}
+{% block content %}
+<section class="panneau">
+  {% if devis_liste %}
+  <div class="tableau-defile"><table class="tableau">
+    <thead><tr><th>Numéro</th><th>Client</th><th>Date</th><th>Statut</th><th class="droite">Total</th></tr></thead>
+    <tbody>
+    {% for d in devis_liste %}
+      <tr>
+        <td><a href="{% url 'devis_detail' d.pk %}"><strong>{{ d.numero }}</strong></a></td>
+        <td>{{ d.client.nom }}</td>
+        <td>{{ d.date_creation|date:'d/m/Y' }}</td>
+        <td><span class="badge badge-{{ d.statut }}">{{ d.get_statut_display }}</span></td>
+        <td class="droite">{{ d.total|fcfa }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+    <p class="vide">Aucun devis pour le moment. <a href="{% url 'devis_nouveau' %}">Créer votre premier devis</a>
+    <br><small>Pensez d’abord à ajouter au moins un client et un produit.</small></p>
+  {% endif %}
+</section>
+{% endblock %}

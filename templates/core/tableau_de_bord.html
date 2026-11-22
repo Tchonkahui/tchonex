@@ -1,0 +1,45 @@
+{% extends 'app_base.html' %}
+{% load tchonex %}
+{% block title %}Tableau de bord{% endblock %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block actions %}<a class="bouton bouton-contour" href="{% url 'modules' %}">Gérer les modules</a>{% endblock %}
+{% block content %}
+<p class="intro">Bienvenue dans l’espace de <strong>{{ entreprise.nom }}</strong>. Voici l’état de vos modules activés.</p>
+
+<div class="chiffres">
+  {% for c in cartes %}
+    <a class="chiffre" href="{% url c.url %}">
+      <span class="chiffre-icone">{{ c.icone }}</span>
+      <span class="chiffre-valeur">{{ c.valeur }}</span>
+      <span class="chiffre-titre">{{ c.titre }}</span>
+      <span class="chiffre-texte">{{ c.texte }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+{% if avec_ventes %}
+<section class="panneau">
+  <div class="panneau-tete">
+    <h2>Derniers devis</h2>
+    <a class="lien" href="{% url 'ventes' %}">Voir tous les devis</a>
+  </div>
+  {% if derniers_devis %}
+  <div class="tableau-defile"><table class="tableau">
+    <thead><tr><th>Numéro</th><th>Client</th><th>Statut</th><th class="droite">Total</th></tr></thead>
+    <tbody>
+    {% for d in derniers_devis %}
+      <tr>
+        <td><a href="{% url 'devis_detail' d.pk %}">{{ d.numero }}</a></td>
+        <td>{{ d.client.nom }}</td>
+        <td><span class="badge badge-{{ d.statut }}">{{ d.get_statut_display }}</span></td>
+        <td class="droite">{{ d.total|fcfa }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+    <p class="vide">Aucun devis pour le moment. <a href="{% url 'devis_nouveau' %}">Créer un devis</a></p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

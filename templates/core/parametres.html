@@ -1,0 +1,24 @@
+{% extends 'app_base.html' %}
+{% block title %}Paramètres{% endblock %}
+{% block titre %}Paramètres{% endblock %}
+{% block content %}
+<section class="panneau">
+  <div class="panneau-tete"><h2>Votre entreprise</h2></div>
+  <dl class="fiche">
+    <div><dt>Nom</dt><dd>{{ entreprise.nom }}</dd></div>
+    <div><dt>Secteur d’activité</dt><dd>{{ entreprise.secteur }}</dd></div>
+    <div><dt>Adresse</dt><dd>{{ entreprise.adresse|default:'Non renseignée' }}</dd></div>
+    <div><dt>Téléphone</dt><dd>{{ entreprise.telephone|default:'Non renseigné' }}</dd></div>
+    <div><dt>Compte</dt><dd>{{ user.email }}</dd></div>
+  </dl>
+</section>
+<section class="panneau">
+  <div class="panneau-tete">
+    <h2>Modules activés</h2>
+    <a class="bouton bouton-orange" href="{% url 'modules' %}">Modifier les modules</a>
+  </div>
+  <ul class="liste-simple">
+    {% for m in modules_actifs %}<li><span class="ico">{{ m.icone }}</span> {{ m.nom }}</li>{% endfor %}
+  </ul>
+</section>
+{% endblock %}

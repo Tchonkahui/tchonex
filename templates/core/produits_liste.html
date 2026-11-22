@@ -1,0 +1,35 @@
+{% extends 'app_base.html' %}
+{% load tchonex %}
+{% block title %}Produits & Stock{% endblock %}
+{% block titre %}Produits &amp; Stock{% endblock %}
+{% block actions %}<a class="bouton bouton-orange" href="{% url 'produit_nouveau' %}">Nouveau produit</a>{% endblock %}
+{% block content %}
+<form class="recherche" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Rechercher un produit" aria-label="Rechercher un produit">
+  <button class="bouton bouton-contour" type="submit">Rechercher</button>
+</form>
+<section class="panneau">
+  {% if produits %}
+  <div class="tableau-defile"><table class="tableau">
+    <thead><tr><th>Produit</th><th class="droite">Prix</th><th class="droite">En stock</th><th>État du stock</th><th class="droite">Actions</th></tr></thead>
+    <tbody>
+    {% for p in produits %}
+      <tr>
+        <td><strong>{{ p.nom }}</strong></td>
+        <td class="droite">{{ p.prix|fcfa }}</td>
+        <td class="droite">{{ p.quantite_stock|nombre }}</td>
+        <td>{% if p.quantite_stock == 0 %}<span class="badge badge-rupture">Rupture</span>{% elif p.stock_bas %}<span class="badge badge-bas">Stock bas</span>{% else %}<span class="badge badge-confirme">Suffisant</span>{% endif %}</td>
+        <td class="droite actions">
+          <a href="{% url 'produit_modifier' p.pk %}">Modifier</a>
+          <form method="post" action="{% url 'produit_supprimer' p.pk %}" data-confirmer="Supprimer le produit {{ p.nom }} ?">{% csrf_token %}<button class="lien-danger" type="submit">Supprimer</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="note">Le stock est signalé « bas » à partir de {{ seuil }} unités ou moins.</p>
+  {% else %}
+    <p class="vide">{% if q %}Aucun produit ne correspond à « {{ q }} ».{% else %}Aucun produit pour le moment. <a href="{% url 'produit_nouveau' %}">Ajouter votre premier produit</a>{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}
