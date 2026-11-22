@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TCHONEX - Votre plateforme ERP modulaire simplifiée pour la gestion d'entreprise.">
+    <title>{% block title %}TCHONEX - ERP Modulaire Simplifié{% endblock %}</title>
+
+    <!-- Police Inter via Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Feuille de style principale -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="page-wrapper">
+        <!-- Barre de navigation -->
+        <header class="navbar">
+            <div class="container navbar-container">
+                <a href="{% url 'home' %}" class="brand-logo" aria-label="Accueil TCHONEX">
+                    TCHONEX<span class="brand-dot">.</span>
+                </a>
+                <nav class="nav-links">
+                    <a href="#" class="btn btn-primary">Commencer</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Contenu principal -->
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <!-- Pied de page -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2026 <strong>TCHONEX</strong>. Tous droits réservés. Plateforme ERP modulaire simplifiée.</p>
+            </div>
+        </footer>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
