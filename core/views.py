@@ -1,3 +1,5 @@
+import calendar as calendrier_python
+import datetime
 from functools import wraps
 
 from django.contrib import messages
@@ -9,12 +11,14 @@ from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import (ClientForm, ConnexionForm, DevisForm, EntrepriseForm, InscriptionForm,
-                    LigneDevisFormSet, ProduitForm)
-from .models import (CATALOGUE, CODES_DISPONIBLES, SEUIL_STOCK_BAS, Client, Devis, Entreprise,
-                     LigneDevis, ModuleActif, Produit)
+from .forms import (ClientForm, ConnexionForm, ContactForm, DevisForm, EntrepriseForm, EvenementForm,
+                    InscriptionForm, LigneDevisFormSet, ProduitForm)
+from .models import (CATALOGUE, CODES_DISPONIBLES, SEUIL_STOCK_BAS, Client, Contact, Devis, Entreprise,
+                     Evenement, LigneDevis, ModuleActif, Produit)
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +68,7 @@ def module_requis(code):
 ENTREES_MENU = {
     'tableau': 'tableau', 'parametres': 'parametres', 'client': 'clients', 'clients': 'clients',
     'produit': 'produits', 'produits': 'produits', 'devis': 'ventes', 'ventes': 'ventes', 'comptabilite': 'comptabilite',
+    'calendrier': 'calendrier', 'evenement': 'calendrier', 'contacts': 'contacts', 'contact': 'contacts',
 }
 
 
@@ -190,6 +195,13 @@ def tableau_de_bord(request):
         valeur_stock = e.produits.aggregate(v=Sum(F('prix') * F('quantite_stock')))['v'] or 0
         cartes.append({'titre': 'Comptabilité', 'valeur': f"{valeur_stock:,}".replace(',', ' ') + ' FCFA',
                        'url': 'comptabilite', 'texte': 'valeur du stock', 'icone': '📊'})
+    if 'calendrier' in actifs:
+        a_venir = e.evenements.filter(date__gte=timezone.localdate()).count()
+        cartes.append({'titre': 'Calendrier', 'valeur': a_venir, 'url': 'calendrier',
+                       'texte': 'événements à venir', 'icone': '📅'})
+    if 'contacts' in actifs:
+        cartes.append({'titre': 'Contacts', 'valeur': e.contacts.count(), 'url': 'contacts',
+                       'texte': 'contacts dans l’annuaire', 'icone': '📇'})
     derniers = e.devis.select_related('client')[:5] if 'ventes' in actifs else []
     return page(request, 'core/tableau_de_bord.html', {
         'cartes': cartes, 'derniers_devis': derniers, 'avec_ventes': 'ventes' in actifs})
@@ -414,3 +426,115 @@ def comptabilite(request):
         'brouillons_total': brouillons['t'] or 0, 'brouillons_nb': brouillons['nb'] or 0,
         'valeur_stock': valeur_stock, 'par_mois': par_mois,
         'meilleurs_clients': meilleurs_clients, 'meilleurs_produits': meilleurs_produits})
+
+
+# ---------------------------------------------------------------------------
+# Module Calendrier : agenda mensuel
+# ---------------------------------------------------------------------------
+def _mois_demande(texte):
+    """Lit « 2026-11 » dans l'adresse ; en cas d'erreur, on prend le mois en cours."""
+    try:
+        annee, mois = texte.split('-')
+        return datetime.date(int(annee), int(mois), 1)
+    except (ValueError, AttributeError):
+        return timezone.localdate().replace(day=1)
+
+
+@entreprise_requise
+@module_requis('calendrier')
+def calendrier(request):
+    e = request.entreprise
+    debut = _mois_demande(request.GET.get('mois'))
+    precedent = (debut - datetime.timedelta(days=1)).replace(day=1)
+    suivant = (debut + datetime.timedelta(days=32)).replace(day=1)
+    semaines_dates = calendrier_python.Calendar(firstweekday=0).monthdatescalendar(debut.year, debut.month)
+    premier, dernier = semaines_dates[0][0], semaines_dates[-1][-1]
+
+    par_jour = {}
+    for ev in e.evenements.filter(date__range=(premier, dernier)):
+        par_jour.setdefault(ev.date, []).append(ev)
+
+    aujourdhui = timezone.localdate()
+    semaines = [[{'date': j, 'hors_mois': j.month != debut.month, 'aujourdhui': j == aujourdhui,
+                  'evenements': par_jour.get(j, [])} for j in semaine] for semaine in semaines_dates]
+    prochains = e.evenements.filter(date__gte=aujourdhui)[:6]
+    return page(request, 'core/calendrier.html', {
+        'debut': debut, 'precedent': precedent.strftime('%Y-%m'), 'suivant': suivant.strftime('%Y-%m'),
+        'semaines': semaines, 'jours': ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+        'prochains': prochains})
+
+
+@entreprise_requise
+@module_requis('calendrier')
+def evenement_form(request, pk=None):
+    evenement = get_object_or_404(Evenement, pk=pk, entreprise=request.entreprise) if pk else None
+    initial = {}
+    if evenement is None and request.GET.get('date'):
+        initial['date'] = request.GET['date']
+    form = EvenementForm(request.POST or None, instance=evenement, initial=initial)
+    if request.method == 'POST' and form.is_valid():
+        objet = form.save(commit=False)
+        objet.entreprise = request.entreprise
+        objet.save()
+        messages.success(request, 'Événement enregistré.')
+        return redirect(f"{reverse('calendrier')}?mois={objet.date.strftime('%Y-%m')}")
+    return page(request, 'core/formulaire.html', {
+        'form': form, 'titre': 'Modifier l’événement' if evenement else 'Nouvel événement',
+        'retour': 'calendrier', 'bouton': 'Enregistrer l’événement',
+        'supprimer_url': reverse('evenement_supprimer', args=[evenement.pk]) if evenement else None})
+
+
+@entreprise_requise
+@module_requis('calendrier')
+@require_POST
+def evenement_supprimer(request, pk):
+    evenement = get_object_or_404(Evenement, pk=pk, entreprise=request.entreprise)
+    evenement.delete()
+    messages.success(request, 'Événement supprimé.')
+    return redirect('calendrier')
+
+
+# ---------------------------------------------------------------------------
+# Module Contacts : annuaire
+# ---------------------------------------------------------------------------
+@entreprise_requise
+@module_requis('contacts')
+def contacts(request):
+    q = request.GET.get('q', '').strip()
+    categorie = request.GET.get('categorie', '')
+    liste = request.entreprise.contacts.all()
+    if q:
+        liste = liste.filter(Q(nom__icontains=q) | Q(societe__icontains=q) | Q(telephone__icontains=q)
+                             | Q(email__icontains=q))
+    if categorie in dict(Contact.CATEGORIES):
+        liste = liste.filter(categorie=categorie)
+    else:
+        categorie = ''
+    return page(request, 'core/contacts_liste.html', {
+        'contacts': liste, 'q': q, 'categorie': categorie, 'categories': Contact.CATEGORIES})
+
+
+@entreprise_requise
+@module_requis('contacts')
+def contact_form(request, pk=None):
+    contact = get_object_or_404(Contact, pk=pk, entreprise=request.entreprise) if pk else None
+    form = ContactForm(request.POST or None, instance=contact)
+    if request.method == 'POST' and form.is_valid():
+        objet = form.save(commit=False)
+        objet.entreprise = request.entreprise
+        objet.save()
+        messages.success(request, 'Contact enregistré.')
+        return redirect('contacts')
+    return page(request, 'core/formulaire.html', {
+        'form': form, 'titre': 'Modifier le contact' if contact else 'Nouveau contact',
+        'retour': 'contacts', 'bouton': 'Enregistrer le contact'})
+
+
+@entreprise_requise
+@module_requis('contacts')
+@require_POST
+def contact_supprimer(request, pk):
+    contact = get_object_or_404(Contact, pk=pk, entreprise=request.entreprise)
+    contact.delete()
+    messages.success(request, 'Contact supprimé.')
+    return redirect('contacts')

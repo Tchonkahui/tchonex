@@ -11,5 +11,10 @@
       <a class="bouton bouton-contour" href="{% url retour %}">Annuler</a>
     </div>
   </form>
+  {% if supprimer_url %}
+  <form method="post" action="{{ supprimer_url }}" data-confirmer="Supprimer cet élément ?" class="supprimer-bas">{% csrf_token %}
+    <button class="lien-danger" type="submit">Supprimer cet événement</button>
+  </form>
+  {% endif %}
 </section>
 {% endblock %}

@@ -7,12 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body class="appli">
   <div class="app">
     <aside class="menu">
-      <a class="logo logo-clair" href="{% url 'tableau_de_bord' %}">{% include 'core/_logo.html' %}<span>TCHONEX</span></a>
+      <a class="logo logo-clair" href="{% url 'tableau_de_bord' %}">{% include 'core/_marque.html' with variante='sombre' %}</a>
       <div class="societe">
         <strong>{{ entreprise.nom }}</strong>
         <span>{{ entreprise.secteur }}</span>

@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import Client, Devis, Entreprise, LigneDevis, ModuleActif, Produit
+from .models import Client, Contact, Devis, Entreprise, Evenement, LigneDevis, ModuleActif, Produit
 
 User = get_user_model()
 SANS_MANIFESTE = override_settings(
@@ -300,3 +300,74 @@ class ComptabiliteTests(TestCase):
         u, e = creer_entreprise('n@n.com', 'N', modules=('clients', 'produits', 'ventes'))
         self.client.force_login(u)
         self.assertRedirects(self.client.get(reverse('comptabilite')), reverse('tableau_de_bord'))
+
+
+@SANS_MANIFESTE
+class CalendrierContactsTests(TestCase):
+    """Modules Calendrier et Contacts : fonctionnement et isolation."""
+
+    def setUp(self):
+        self.ua, self.a = creer_entreprise('a@cal.com', 'Entreprise A', modules=('calendrier', 'contacts'))
+        self.ub, self.b = creer_entreprise('b@cal.com', 'Entreprise B', modules=('calendrier', 'contacts'))
+
+    def test_creer_evenement_et_le_voir_dans_le_mois(self):
+        self.client.force_login(self.ua)
+        r = self.client.post(reverse('evenement_nouveau'), {
+            'titre': 'Livraison fournisseur', 'date': '2026-11-25', 'heure': '09:30', 'lieu': 'Entrepôt'})
+        self.assertRedirects(r, reverse('calendrier') + '?mois=2026-11')
+        page = self.client.get(reverse('calendrier') + '?mois=2026-11')
+        self.assertContains(page, 'title="Livraison fournisseur"')   # pastille dans la grille du mois
+        # un autre mois n'affiche pas l'événement dans la grille
+        autre = self.client.get(reverse('calendrier') + '?mois=2026-12')
+        self.assertNotContains(autre, 'title="Livraison fournisseur"')
+
+    def test_mois_invalide_ne_plante_pas(self):
+        self.client.force_login(self.ua)
+        self.assertEqual(self.client.get(reverse('calendrier') + '?mois=abc').status_code, 200)
+        self.assertEqual(self.client.get(reverse('calendrier') + '?mois=2026-13').status_code, 200)
+
+    def test_modifier_et_supprimer_evenement(self):
+        self.client.force_login(self.ua)
+        ev = Evenement.objects.create(entreprise=self.a, titre='Réunion', date='2026-11-30')
+        self.client.post(reverse('evenement_modifier', args=[ev.pk]), {'titre': 'Réunion client', 'date': '2026-11-30'})
+        ev.refresh_from_db()
+        self.assertEqual(ev.titre, 'Réunion client')
+        self.client.post(reverse('evenement_supprimer', args=[ev.pk]))
+        self.assertFalse(Evenement.objects.filter(pk=ev.pk).exists())
+
+    def test_isolation_calendrier(self):
+        ev = Evenement.objects.create(entreprise=self.a, titre='Secret de A', date='2026-11-25')
+        self.client.force_login(self.ub)
+        self.assertNotContains(self.client.get(reverse('calendrier') + '?mois=2026-11'), 'Secret de A')
+        self.assertEqual(self.client.get(reverse('evenement_modifier', args=[ev.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse('evenement_supprimer', args=[ev.pk])).status_code, 404)
+        self.assertTrue(Evenement.objects.filter(pk=ev.pk).exists())
+
+    def test_contacts_creation_recherche_filtre(self):
+        self.client.force_login(self.ua)
+        self.client.post(reverse('contact_nouveau'), {'nom': 'Mme Biya', 'societe': 'Tissus SA', 'categorie': 'fournisseur'})
+        self.client.post(reverse('contact_nouveau'), {'nom': 'M. Eto', 'societe': 'Eto & Fils', 'categorie': 'partenaire'})
+        self.assertEqual(Contact.objects.filter(entreprise=self.a).count(), 2)
+        self.assertContains(self.client.get(reverse('contacts') + '?q=Tissus'), 'Mme Biya')
+        self.assertNotContains(self.client.get(reverse('contacts') + '?q=Tissus'), 'M. Eto')
+        r = self.client.get(reverse('contacts') + '?categorie=partenaire')
+        self.assertContains(r, 'M. Eto'); self.assertNotContains(r, 'Mme Biya')
+
+    def test_isolation_contacts(self):
+        c = Contact.objects.create(entreprise=self.a, nom='Contact secret de A')
+        self.client.force_login(self.ub)
+        self.assertNotContains(self.client.get(reverse('contacts')), 'Contact secret de A')
+        self.assertEqual(self.client.get(reverse('contact_modifier', args=[c.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse('contact_supprimer', args=[c.pk])).status_code, 404)
+
+    def test_modules_inactifs_inaccessibles(self):
+        u, e = creer_entreprise('z@z.com', 'Z', modules=('clients',))
+        self.client.force_login(u)
+        self.assertRedirects(self.client.get(reverse('calendrier')), reverse('tableau_de_bord'))
+        self.assertRedirects(self.client.get(reverse('contacts')), reverse('tableau_de_bord'))
+
+    def test_tableau_de_bord_et_menu(self):
+        self.client.force_login(self.ua)
+        r = self.client.get(reverse('tableau_de_bord'))
+        self.assertContains(r, 'Calendrier'); self.assertContains(r, 'Contacts')
+        self.assertContains(r, 'Plateforme tech')

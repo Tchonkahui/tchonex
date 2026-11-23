@@ -28,6 +28,14 @@ CATALOGUE = [
         'depend_de': ['ventes', 'clients', 'produits'],
         'note_dependance': 'Active aussi Ventes, Clients et Produits & Stock.',
     },
+    {
+        'code': 'calendrier', 'nom': 'Calendrier', 'icone': '📅', 'disponible': True,
+        'description': 'Planifiez vos rendez-vous, livraisons et échéances dans un agenda mensuel.',
+    },
+    {
+        'code': 'contacts', 'nom': 'Contacts', 'icone': '📇', 'disponible': True,
+        'description': 'Un annuaire de vos contacts : fournisseurs, partenaires et autres.',
+    },
     {'code': 'rh', 'nom': 'RH', 'icone': '🧑‍💼', 'disponible': False,
      'description': 'Employés, congés et présences.'},
     {'code': 'projets', 'nom': 'Projets', 'icone': '📋', 'disponible': False,
@@ -180,3 +188,39 @@ class LigneDevis(models.Model):
             self.prix_unitaire = self.produit.prix
         self.montant = self.quantite * self.prix_unitaire
         super().save(*args, **kwargs)
+
+
+class Contact(models.Model):
+    """Un contact de l'annuaire (fournisseur, partenaire…). Différent d'un client facturé."""
+    CATEGORIES = [('fournisseur', 'Fournisseur'), ('partenaire', 'Partenaire'),
+                  ('client', 'Client'), ('autre', 'Autre')]
+    entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, related_name='contacts')
+    nom = models.CharField(max_length=120)
+    societe = models.CharField('Société', max_length=120, blank=True)
+    fonction = models.CharField(max_length=120, blank=True)
+    categorie = models.CharField('Catégorie', max_length=15, choices=CATEGORIES, default='autre')
+    telephone = models.CharField('Téléphone', max_length=30, blank=True)
+    email = models.EmailField('E-mail', blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom
+
+
+class Evenement(models.Model):
+    """Un événement de l'agenda de l'entreprise."""
+    entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, related_name='evenements')
+    titre = models.CharField(max_length=150)
+    date = models.DateField()
+    heure = models.TimeField('Heure', null=True, blank=True)
+    lieu = models.CharField(max_length=150, blank=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['date', 'heure', 'id']
+
+    def __str__(self):
+        return f'{self.titre} ({self.date})'

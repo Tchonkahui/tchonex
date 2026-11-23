@@ -1,0 +1,40 @@
+{% extends 'app_base.html' %}
+{% block title %}Contacts{% endblock %}
+{% block titre %}Contacts{% endblock %}
+{% block actions %}<a class="bouton bouton-orange" href="{% url 'contact_nouveau' %}">Nouveau contact</a>{% endblock %}
+{% block content %}
+<form class="recherche" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Rechercher un nom, une société, un téléphone" aria-label="Rechercher un contact">
+  {% if categorie %}<input type="hidden" name="categorie" value="{{ categorie }}">{% endif %}
+  <button class="bouton bouton-contour" type="submit">Rechercher</button>
+</form>
+<nav class="filtres" aria-label="Filtrer par catégorie">
+  <a href="?{% if q %}q={{ q }}{% endif %}" {% if not categorie %}aria-current="true"{% endif %}>Tous</a>
+  {% for code, nom in categories %}
+    <a href="?categorie={{ code }}{% if q %}&q={{ q }}{% endif %}" {% if categorie == code %}aria-current="true"{% endif %}>{{ nom }}</a>
+  {% endfor %}
+</nav>
+<section class="panneau">
+  {% if contacts %}
+  <div class="tableau-defile"><table class="tableau">
+    <thead><tr><th>Nom</th><th>Société</th><th>Catégorie</th><th>Téléphone</th><th>E-mail</th><th class="droite">Actions</th></tr></thead>
+    <tbody>
+    {% for c in contacts %}
+      <tr>
+        <td><strong>{{ c.nom }}</strong>{% if c.fonction %}<br><small class="gris">{{ c.fonction }}</small>{% endif %}</td>
+        <td>{{ c.societe|default:'—' }}</td>
+        <td><span class="badge badge-categorie">{{ c.get_categorie_display }}</span></td>
+        <td>{{ c.telephone|default:'—' }}</td><td>{{ c.email|default:'—' }}</td>
+        <td class="droite actions">
+          <a href="{% url 'contact_modifier' c.pk %}">Modifier</a>
+          <form method="post" action="{% url 'contact_supprimer' c.pk %}" data-confirmer="Supprimer le contact {{ c.nom }} ?">{% csrf_token %}<button class="lien-danger" type="submit">Supprimer</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+    <p class="vide">{% if q or categorie %}Aucun contact ne correspond à votre recherche.{% else %}Aucun contact pour le moment. <a href="{% url 'contact_nouveau' %}">Ajouter votre premier contact</a>{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -4,7 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.forms import inlineformset_factory
 
-from .models import Client, Devis, Entreprise, LigneDevis, Produit
+from .models import Client, Contact, Devis, Entreprise, Evenement, LigneDevis, Produit
 
 User = get_user_model()
 
@@ -95,3 +95,21 @@ class LigneDevisForm(forms.ModelForm):
 
 LigneDevisFormSet = inlineformset_factory(
     Devis, LigneDevis, form=LigneDevisForm, extra=1, can_delete=True)
+
+
+class ContactForm(forms.ModelForm):
+    class Meta:
+        model = Contact
+        fields = ['nom', 'societe', 'fonction', 'categorie', 'telephone', 'email', 'notes']
+        widgets = {'notes': forms.Textarea(attrs={'rows': 3})}
+
+
+class EvenementForm(forms.ModelForm):
+    class Meta:
+        model = Evenement
+        fields = ['titre', 'date', 'heure', 'lieu', 'description']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'heure': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }

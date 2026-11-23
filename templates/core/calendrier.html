@@ -1,0 +1,49 @@
+{% extends 'app_base.html' %}
+{% block title %}Calendrier{% endblock %}
+{% block titre %}Calendrier{% endblock %}
+{% block actions %}<a class="bouton bouton-orange" href="{% url 'evenement_nouveau' %}">Nouvel événement</a>{% endblock %}
+{% block content %}
+<div class="agenda">
+  <section class="panneau agenda-mois">
+    <div class="agenda-nav">
+      <a class="bouton bouton-contour" href="?mois={{ precedent }}" aria-label="Mois précédent">‹</a>
+      <h2>{{ debut|date:'F Y' }}</h2>
+      <a class="bouton bouton-contour" href="?mois={{ suivant }}" aria-label="Mois suivant">›</a>
+    </div>
+    <div class="grille-jours" role="presentation">
+      {% for j in jours %}<span class="nom-jour">{{ j }}</span>{% endfor %}
+    </div>
+    <div class="grille-mois">
+      {% for semaine in semaines %}{% for jour in semaine %}
+        <div class="jour {% if jour.hors_mois %}jour-hors{% endif %} {% if jour.aujourdhui %}jour-aujourdhui{% endif %}">
+          <div class="jour-tete">
+            <span class="jour-numero">{{ jour.date.day }}</span>
+            {% if not jour.hors_mois %}<a class="jour-ajout" href="{% url 'evenement_nouveau' %}?date={{ jour.date|date:'Y-m-d' }}" aria-label="Ajouter un événement le {{ jour.date|date:'j F' }}">+</a>{% endif %}
+          </div>
+          {% for ev in jour.evenements|slice:":3" %}
+            <a class="evt" href="{% url 'evenement_modifier' ev.pk %}" title="{{ ev.titre }}">{% if ev.heure %}<b>{{ ev.heure|time:'H:i' }}</b> {% endif %}{{ ev.titre }}</a>
+          {% endfor %}
+          {% if jour.evenements|length > 3 %}<span class="evt-plus">+ {{ jour.evenements|length|add:'-3' }} autre(s)</span>{% endif %}
+        </div>
+      {% endfor %}{% endfor %}
+    </div>
+  </section>
+
+  <aside class="panneau agenda-liste">
+    <div class="panneau-tete"><h2>À venir</h2></div>
+    {% if prochains %}
+      <ul class="prochains">
+        {% for ev in prochains %}
+          <li>
+            <span class="prochain-date">{{ ev.date|date:'d M' }}</span>
+            <a href="{% url 'evenement_modifier' ev.pk %}"><strong>{{ ev.titre }}</strong></a>
+            <small>{% if ev.heure %}{{ ev.heure|time:'H:i' }}{% endif %}{% if ev.heure and ev.lieu %} · {% endif %}{{ ev.lieu }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="vide">Aucun événement à venir. Cliquez sur « + » dans une case du calendrier pour en ajouter un.</p>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

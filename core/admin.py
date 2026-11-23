@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Client, Devis, Entreprise, LigneDevis, ModuleActif, Produit
+from .models import Client, Contact, Devis, Entreprise, Evenement, LigneDevis, ModuleActif, Produit
 
 
 class LigneDevisInline(admin.TabularInline):
@@ -18,3 +18,5 @@ admin.site.register(Entreprise)
 admin.site.register(ModuleActif)
 admin.site.register(Client)
 admin.site.register(Produit)
+admin.site.register(Contact)
+admin.site.register(Evenement)

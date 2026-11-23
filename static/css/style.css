@@ -33,7 +33,21 @@ a:hover { color: var(--orange-fonce); }
 .lien-danger { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--alerte); cursor: pointer; }
 .lien-danger:hover { text-decoration: underline; }
 
-/* ---------- Logo ---------- */
+/* ---------- Logo (marque TCHONEX) ---------- */
+.marque { display: inline-flex; align-items: center; gap: .7rem; }
+.marque-texte { display: flex; flex-direction: column; }
+.marque-nom { font-weight: 800; font-size: 1.35rem; letter-spacing: .07em; line-height: 1; }
+.marque-x { background: linear-gradient(135deg, #22D3EE 0 50%, #FBBF24 50% 100%); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent; }
+.marque-sous { font-size: .56rem; font-weight: 500; letter-spacing: .26em; text-transform: uppercase; margin-top: .4rem; }
+.marque-claire .marque-nom { color: var(--bleu-nuit); }
+.marque-claire .marque-sous { color: var(--gris); }
+.marque-sombre .marque-nom { background: linear-gradient(180deg, #FFFFFF 20%, #BFD0F5 100%); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent; text-shadow: 0 0 18px rgba(120,160,255,.35); }
+.marque-sombre .marque-sous { color: #8FB0E8; }
+.marque-sombre .marque-x { background: linear-gradient(135deg, #22D3EE 0 50%, #FBBF24 50% 100%); -webkit-background-clip: text; background-clip: text; }
+.menu .logo { padding: .2rem .2rem .4rem; }
+
 .logo { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--bleu);
   font-weight: 800; font-size: 1.3rem; letter-spacing: .01em; }
 .logo:hover { color: var(--bleu); }
@@ -230,4 +244,40 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
   .deux-colonnes { grid-template-columns: 1fr; }
   .barres li { grid-template-columns: 90px 1fr; }
   .barres-total { grid-column: 1 / -1; text-align: left; }
+}
+
+/* ---------- Calendrier et Contacts ---------- */
+.agenda { display: grid; grid-template-columns: 1fr 300px; gap: 1.2rem; align-items: start; }
+.agenda .panneau { margin-bottom: 0; }
+.agenda-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.agenda-nav h2 { font-size: 1.2rem; text-transform: capitalize; }
+.grille-jours, .grille-mois { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.nom-jour { text-align: center; font-size: .8rem; font-weight: 600; color: var(--gris); padding: .3rem 0 .5rem; }
+.grille-mois { border-top: 1px solid var(--ligne); border-left: 1px solid var(--ligne); }
+.jour { min-height: 104px; padding: .3rem .35rem; border-right: 1px solid var(--ligne); border-bottom: 1px solid var(--ligne); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.jour-hors { background: #F8F9FC; color: #9AA3B7; }
+.jour-tete { display: flex; justify-content: space-between; align-items: center; }
+.jour-numero { font-size: .85rem; font-weight: 600; }
+.jour-aujourdhui .jour-numero { background: var(--orange); color: #fff; border-radius: 999px; min-width: 1.5rem; height: 1.5rem; display: grid; place-items: center; }
+.jour-ajout { opacity: 0; text-decoration: none; font-weight: 700; color: var(--bleu); width: 1.4rem; height: 1.4rem; display: grid; place-items: center; border-radius: 6px; }
+.jour:hover .jour-ajout, .jour-ajout:focus-visible { opacity: 1; }
+.jour-ajout:hover { background: var(--bleu-pale); }
+.evt { display: block; background: var(--bleu-pale); color: var(--bleu); border-left: 3px solid var(--bleu); border-radius: 4px; padding: 1px 5px; font-size: .76rem; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evt:hover { background: #D5DEF5; color: var(--bleu); }
+.evt-plus { font-size: .72rem; color: var(--gris); }
+.prochains { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
+.prochains li { display: grid; gap: 1px; border-left: 3px solid var(--orange); padding-left: .7rem; }
+.prochain-date { font-size: .78rem; font-weight: 700; color: var(--orange-fonce); text-transform: uppercase; }
+.prochains a { text-decoration: none; }
+.prochains small { color: var(--gris); }
+.filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.filtres a { text-decoration: none; padding: .3rem .9rem; border-radius: 999px; border: 1.5px solid #C9D3EA; color: var(--bleu); font-weight: 600; font-size: .88rem; background: #fff; }
+.filtres a[aria-current] { background: var(--bleu); border-color: var(--bleu); color: #fff; }
+.badge-categorie { background: var(--bleu-pale); color: var(--bleu); }
+.gris { color: var(--gris); }
+.supprimer-bas { margin-top: 1rem; }
+@media (max-width: 900px) {
+  .agenda { grid-template-columns: 1fr; }
+  .jour { min-height: 74px; }
+  .evt { font-size: .68rem; }
 }
