@@ -17,7 +17,7 @@
               <span class="module-icone">{{ m.icone }}</span>
               <strong>{{ m.nom }}</strong>
               <span class="module-texte">{{ m.description }}</span>
-              {% if m.depend_de %}<span class="module-note">Active aussi Clients et Produits & Stock.</span>{% endif %}
+              {% if m.note_dependance %}<span class="module-note">{{ m.note_dependance }}</span>{% endif %}
             </span>
             <span class="module-coche" aria-hidden="true">✓</span>
           </label>

@@ -212,3 +212,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
   .entete { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- Module Comptabilité ---------- */
+.chiffre-fixe { cursor: default; }
+.chiffre-fixe:hover { border-color: var(--ligne); border-top-color: var(--bleu); }
+.chiffre-fixe .chiffre-valeur { font-size: 1.45rem; }
+.deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.deux-colonnes .panneau { margin-bottom: 0; }
+.barres { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+.barres li { display: grid; grid-template-columns: 120px 1fr minmax(150px, auto); gap: .8rem; align-items: center; }
+.barres-mois { font-weight: 600; text-transform: capitalize; }
+.barres-piste { background: #EDF1F9; border-radius: 6px; height: 14px; overflow: hidden; }
+.barres-valeur { display: block; height: 100%; background: var(--bleu); border-radius: 6px; min-width: 4px; }
+.barres-total { text-align: right; font-weight: 600; }
+.barres-total small { color: var(--gris); font-weight: 400; }
+@media (max-width: 900px) {
+  .deux-colonnes { grid-template-columns: 1fr; }
+  .barres li { grid-template-columns: 90px 1fr; }
+  .barres-total { grid-column: 1 / -1; text-align: left; }
+}

@@ -242,3 +242,61 @@ class VentesTests(TestCase):
         r = self.client.get(reverse('tableau_de_bord'))
         self.assertContains(r, '12')
         self.assertContains(r, 'FCFA')
+
+
+@SANS_MANIFESTE
+class ComptabiliteTests(TestCase):
+    """Module Comptabilité : indicateurs simplifiés, isolés par entreprise."""
+
+    def setUp(self):
+        self.u, self.e = creer_entreprise('c@compta.com', 'Fally Fashion',
+                                          modules=('clients', 'produits', 'ventes', 'comptabilite'))
+        self.c = Client.objects.create(entreprise=self.e, nom='DG Landry')
+        self.p = Produit.objects.create(entreprise=self.e, nom='Chemise', prix=12500, quantite_stock=10)
+        self.client.force_login(self.u)
+
+    def vente(self, quantite, confirmer=True):
+        self.client.post(reverse('devis_nouveau'), donnees_devis(self.c, [(self.p, quantite)]))
+        devis = Devis.objects.filter(entreprise=self.e).order_by('-id').first()
+        if confirmer:
+            self.client.post(reverse('devis_confirmer', args=[devis.pk]))
+        return devis
+
+    def test_module_choisi_active_ses_dependances(self):
+        u, e = creer_entreprise('d@d.com', 'D', modules=())
+        self.client.force_login(u)
+        self.client.post(reverse('modules'), {'modules': ['comptabilite']})
+        self.assertEqual(e.codes_modules(), {'clients', 'produits', 'ventes', 'comptabilite'})
+
+    def test_indicateurs_corrects(self):
+        self.vente(2)                      # 25 000 confirmés, stock 10 -> 8
+        self.vente(1)                      # 12 500 confirmés, stock 8 -> 7
+        self.vente(3, confirmer=False)     # 37 500 en brouillon
+        r = self.client.get(reverse('comptabilite'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context['chiffre_affaires'], 37500)
+        self.assertEqual(r.context['nb_ventes'], 2)
+        self.assertEqual(r.context['panier_moyen'], 18750)
+        self.assertEqual(r.context['brouillons_total'], 37500)
+        self.assertEqual(r.context['valeur_stock'], 7 * 12500)
+        self.assertEqual(len(r.context['par_mois']), 1)
+        self.assertEqual(r.context['meilleurs_produits'][0]['quantite'], 3)
+
+    def test_page_vide_sans_ventes(self):
+        r = self.client.get(reverse('comptabilite'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Aucune vente confirmée')
+
+    def test_isolation_des_chiffres(self):
+        self.vente(2)
+        ub, b = creer_entreprise('b@compta.com', 'Autre', modules=('clients', 'produits', 'ventes', 'comptabilite'))
+        self.client.force_login(ub)
+        r = self.client.get(reverse('comptabilite'))
+        self.assertEqual(r.context['chiffre_affaires'], 0)
+        self.assertEqual(r.context['valeur_stock'], 0)
+        self.assertNotContains(r, 'DG Landry')
+
+    def test_module_inactif_inaccessible(self):
+        u, e = creer_entreprise('n@n.com', 'N', modules=('clients', 'produits', 'ventes'))
+        self.client.force_login(u)
+        self.assertRedirects(self.client.get(reverse('comptabilite')), reverse('tableau_de_bord'))

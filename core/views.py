@@ -5,7 +5,8 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
+from django.db.models.functions import TruncMonth
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -13,7 +14,7 @@ from django.views.decorators.http import require_POST
 from .forms import (ClientForm, ConnexionForm, DevisForm, EntrepriseForm, InscriptionForm,
                     LigneDevisFormSet, ProduitForm)
 from .models import (CATALOGUE, CODES_DISPONIBLES, SEUIL_STOCK_BAS, Client, Devis, Entreprise,
-                     ModuleActif, Produit)
+                     LigneDevis, ModuleActif, Produit)
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +63,7 @@ def module_requis(code):
 
 ENTREES_MENU = {
     'tableau': 'tableau', 'parametres': 'parametres', 'client': 'clients', 'clients': 'clients',
-    'produit': 'produits', 'produits': 'produits', 'devis': 'ventes', 'ventes': 'ventes',
+    'produit': 'produits', 'produits': 'produits', 'devis': 'ventes', 'ventes': 'ventes', 'comptabilite': 'comptabilite',
 }
 
 
@@ -185,6 +186,10 @@ def tableau_de_bord(request):
                        'texte': f"devis, dont {stats['confirmes']} confirmés", 'icone': '🧾'})
         cartes.append({'titre': 'Ventes confirmées', 'valeur': f"{(stats['total'] or 0):,}".replace(',', ' ') + ' FCFA',
                        'url': 'ventes', 'texte': 'total des devis confirmés', 'icone': '💰'})
+    if 'comptabilite' in actifs:
+        valeur_stock = e.produits.aggregate(v=Sum(F('prix') * F('quantite_stock')))['v'] or 0
+        cartes.append({'titre': 'Comptabilité', 'valeur': f"{valeur_stock:,}".replace(',', ' ') + ' FCFA',
+                       'url': 'comptabilite', 'texte': 'valeur du stock', 'icone': '📊'})
     derniers = e.devis.select_related('client')[:5] if 'ventes' in actifs else []
     return page(request, 'core/tableau_de_bord.html', {
         'cartes': cartes, 'derniers_devis': derniers, 'avec_ventes': 'ventes' in actifs})
@@ -370,3 +375,42 @@ def devis_supprimer(request, pk):
     devis.delete()
     messages.success(request, 'Devis supprimé.')
     return redirect('ventes')
+
+
+# ---------------------------------------------------------------------------
+# Module Comptabilité : indicateurs financiers simplifiés (lecture seule)
+# ---------------------------------------------------------------------------
+@entreprise_requise
+@module_requis('comptabilite')
+def comptabilite(request):
+    """
+    Indicateurs calculés à partir des données existantes. Ce module n'ajoute aucune table :
+    il lit les devis confirmés (chiffre d'affaires) et les produits (valeur du stock).
+    Ce n'est PAS une comptabilité légale (pas de plan comptable ni d'écritures).
+    """
+    e = request.entreprise
+    confirmes = e.devis.filter(statut=Devis.CONFIRME)
+    synthese = confirmes.aggregate(ca=Sum('total'), nb=Count('id'))
+    chiffre_affaires = synthese['ca'] or 0
+    nb_ventes = synthese['nb'] or 0
+    panier_moyen = chiffre_affaires // nb_ventes if nb_ventes else 0
+    brouillons = e.devis.filter(statut=Devis.BROUILLON).aggregate(t=Sum('total'), nb=Count('id'))
+    valeur_stock = e.produits.aggregate(v=Sum(F('prix') * F('quantite_stock')))['v'] or 0
+
+    par_mois = list(confirmes.annotate(mois=TruncMonth('date_creation'))
+                    .values('mois').annotate(total=Sum('total'), nb=Count('id')).order_by('mois'))[-6:]
+    maximum = max([m['total'] for m in par_mois], default=0)
+    for m in par_mois:
+        m['pourcentage'] = round(m['total'] * 100 / maximum) if maximum else 0
+
+    meilleurs_clients = (confirmes.values('client__nom')
+                         .annotate(total=Sum('total'), nb=Count('id')).order_by('-total')[:5])
+    meilleurs_produits = (LigneDevis.objects.filter(devis__entreprise=e, devis__statut=Devis.CONFIRME)
+                          .values('produit__nom').annotate(quantite=Sum('quantite'), total=Sum('montant'))
+                          .order_by('-total')[:5])
+
+    return page(request, 'core/comptabilite.html', {
+        'chiffre_affaires': chiffre_affaires, 'nb_ventes': nb_ventes, 'panier_moyen': panier_moyen,
+        'brouillons_total': brouillons['t'] or 0, 'brouillons_nb': brouillons['nb'] or 0,
+        'valeur_stock': valeur_stock, 'par_mois': par_mois,
+        'meilleurs_clients': meilleurs_clients, 'meilleurs_produits': meilleurs_produits})

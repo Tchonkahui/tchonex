@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
         li.textContent = c.dataset.nom;
         if (requis[c.dataset.code]) {
           var petit = document.createElement('small');
-          petit.textContent = 'Nécessaire pour Ventes';
+          petit.textContent = 'Nécessaire pour un autre module choisi';
           li.appendChild(petit);
         }
         liste.appendChild(li);

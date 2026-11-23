@@ -1,0 +1,51 @@
+{% extends 'app_base.html' %}
+{% load tchonex %}
+{% block title %}Comptabilité{% endblock %}
+{% block titre %}Comptabilité{% endblock %}
+{% block content %}
+<p class="intro">Indicateurs financiers simplifiés de <strong>{{ entreprise.nom }}</strong>, calculés à partir de vos devis confirmés et de votre stock.</p>
+
+<div class="chiffres">
+  <div class="chiffre chiffre-fixe"><span class="chiffre-icone">💰</span><span class="chiffre-valeur">{{ chiffre_affaires|fcfa }}</span><span class="chiffre-titre">Chiffre d’affaires</span><span class="chiffre-texte">total des devis confirmés</span></div>
+  <div class="chiffre chiffre-fixe"><span class="chiffre-icone">🧾</span><span class="chiffre-valeur">{{ nb_ventes }}</span><span class="chiffre-titre">Ventes confirmées</span><span class="chiffre-texte">panier moyen : {{ panier_moyen|fcfa }}</span></div>
+  <div class="chiffre chiffre-fixe"><span class="chiffre-icone">⏳</span><span class="chiffre-valeur">{{ brouillons_total|fcfa }}</span><span class="chiffre-titre">Devis en attente</span><span class="chiffre-texte">{{ brouillons_nb }} brouillon(s) à confirmer</span></div>
+  <div class="chiffre chiffre-fixe"><span class="chiffre-icone">📦</span><span class="chiffre-valeur">{{ valeur_stock|fcfa }}</span><span class="chiffre-titre">Valeur du stock</span><span class="chiffre-texte">prix de vente × quantités en stock</span></div>
+</div>
+
+<section class="panneau">
+  <div class="panneau-tete"><h2>Chiffre d’affaires par mois</h2></div>
+  {% if par_mois %}
+    <ul class="barres">
+      {% for m in par_mois %}
+        <li>
+          <span class="barres-mois">{{ m.mois|date:'F Y' }}</span>
+          <span class="barres-piste"><span class="barres-valeur" style="width: {{ m.pourcentage }}%"></span></span>
+          <span class="barres-total">{{ m.total|fcfa }} <small>({{ m.nb }} vente{{ m.nb|pluralize }})</small></span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="vide">Aucune vente confirmée pour le moment. Confirmez un devis dans le module Ventes pour voir apparaître vos chiffres.</p>
+  {% endif %}
+</section>
+
+<div class="deux-colonnes">
+  <section class="panneau">
+    <div class="panneau-tete"><h2>Meilleurs clients</h2></div>
+    {% if meilleurs_clients %}
+    <table class="tableau"><thead><tr><th>Client</th><th class="droite">Ventes</th><th class="droite">Total</th></tr></thead><tbody>
+      {% for c in meilleurs_clients %}<tr><td>{{ c.client__nom }}</td><td class="droite">{{ c.nb }}</td><td class="droite">{{ c.total|fcfa }}</td></tr>{% endfor %}
+    </tbody></table>
+    {% else %}<p class="vide">Pas encore de données.</p>{% endif %}
+  </section>
+  <section class="panneau">
+    <div class="panneau-tete"><h2>Produits les plus vendus</h2></div>
+    {% if meilleurs_produits %}
+    <table class="tableau"><thead><tr><th>Produit</th><th class="droite">Quantité</th><th class="droite">Total</th></tr></thead><tbody>
+      {% for p in meilleurs_produits %}<tr><td>{{ p.produit__nom }}</td><td class="droite">{{ p.quantite }}</td><td class="droite">{{ p.total|fcfa }}</td></tr>{% endfor %}
+    </tbody></table>
+    {% else %}<p class="vide">Pas encore de données.</p>{% endif %}
+  </section>
+</div>
+<p class="note">Ces indicateurs sont une vue simplifiée pour la gestion courante. Ils ne remplacent pas une comptabilité légale (plan comptable, écritures, déclarations).</p>
+{% endblock %}

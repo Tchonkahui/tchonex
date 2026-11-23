@@ -29,6 +29,9 @@ urlpatterns = [
     path('produits/<int:pk>/modifier/', views.produit_form, name='produit_modifier'),
     path('produits/<int:pk>/supprimer/', views.produit_supprimer, name='produit_supprimer'),
 
+    # Module Comptabilité
+    path('comptabilite/', views.comptabilite, name='comptabilite'),
+
     # Module Ventes
     path('ventes/', views.ventes, name='ventes'),
     path('ventes/nouveau/', views.devis_form, name='devis_nouveau'),
